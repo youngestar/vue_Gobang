@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+
+</body>
+<!-- 写登录 -->
+<div class="container">
+  <div>
+    <label for="">用户名</label>
+    <input type="text" name="username" id="username">
+  </div>
+  <div>
+    <div>
+      <label for="">密码</label>
+      <input type="password" name="password" id="password">
+    </div>
+
+    <div>当前登录的用户：
+      <span id="current-user"></span>
+    </div>
+
+    <div>
+      所有注册的用户：
+      <ul id="users"></ul>
+    </div>
+
+    <div>
+      <button id="login">登录</button>
+      <button id="register">注册</button>
+    </div>
+
+  </div>
+
+  <script>
+    const users = JSON.parse(localStorage.getItem('users')) || []
+    const currentUser = localStorage.getItem('currentUser')
+
+    const $username = document.querySelector('#username')
+    const $password = document.querySelector('#password')
+    const $currentUser = document.querySelector('#current-user')
+    const $users = document.querySelector('#users')
+    const $login = document.querySelector('#login')
+    const $register = document.querySelector('#register')
+
+    $currentUser.textContent = currentUser
+    $users.innerHTML = users.map(user => `<li>${user.username}</li>`).join('')
+
+    $login.addEventListener('click', () => {
+      const username = $username.value
+      const password = $password.value
+
+    })
+
+    $register.addEventListener('click', () => {
+      const username = $username.value
+      const password = $password.value
+
+
+      users.push({ username, password })
+      localStorage.setItem('users', JSON.stringify(users))
+      $users.innerHTML = users.map(user => `<li>${user.username}</li>`).join('')
+    })
+
+  </script>
+
+</html>

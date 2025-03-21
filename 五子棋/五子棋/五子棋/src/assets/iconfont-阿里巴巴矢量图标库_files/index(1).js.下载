@@ -1,0 +1,144 @@
+(function (win) {
+  var target = document.head || document.getElementsByTagName("head")[0];
+
+  function noop() {}
+
+  function jsonp(url, opts, fn) {
+    if ('function' == typeof opts) {
+      fn = opts;
+      opts = {};
+    }
+    if (!opts) opts = {};
+    var prefix = opts.prefix || '__jp';
+    var param = opts.param || 'jsonpCallback';
+    var timeout = null !== opts.timeout ? opts.timeout : 60000;
+    var enc = encodeURIComponent;
+    var script;
+    var timer;
+    var id = prefix + '_feedback_redbox_' + parseInt(Math.random() * 100);
+    if (timeout) {
+      timer = setTimeout(function () {
+        cleanup();
+        if (fn) fn(new Error('Timeout'));
+      }, timeout);
+    }
+
+    function cleanup() {
+      if (script.parentNode) script.parentNode.removeChild(script);
+      window[id] = noop;
+      if (timer) clearTimeout(timer);
+    }
+
+    function cancel() {
+      if (window[id]) {
+        cleanup();
+      }
+    }
+    window[id] = function (data) {
+      cleanup();
+      if (fn) fn(null, data);
+    };
+    url += (~url.indexOf('?') ? '&' : '?') + param + '=' + id;
+    url = url.replace('?&', '?');
+    script = document.createElement('script');
+    script.src = url;
+    target.appendChild(script);
+    return cancel;
+  }
+  var hasLoad = false;
+  var list = [];
+
+  function loadFeedBack(version) {
+    var src;
+    if (location.href.indexOf('_feedback_prejs=true') > -1) {
+      src =  
+        '//dev.g.alicdn.com/mm/feedback-plus-front/' +
+        version +
+        '/index.js';
+    } else {
+      src = '//g.alicdn.com/mm/feedback-plus-front/' + version + '/index.js';
+    }
+    var script = document.createElement('script');
+    script.src = src;
+    target.appendChild(script);
+    script.onload = function () {
+      if (!win.FeedBack) {
+        return;
+      }
+      for (var i = 0, j = list.length; i < j; i++) {
+        if (list[i].resolve) {
+          list[i].resolve(new win.FeedBack(list[i].config));
+        } else {
+          new win.FeedBack(list[i].config);
+        }
+      }
+    };
+  }
+  win.FeedBackLoader = function (config) {
+    if (!win.addEventListener) {
+      return;
+    }
+    if (win.Promise) {
+      return new Promise(function (resolve, reject) {
+        config = config || {};
+        if (win.FeedBack) {
+          resolve(new win.FeedBack(config));
+        } else {
+          if (hasLoad) {
+            list.push({
+              config: config,
+              resolve: resolve
+            });
+          } else {
+            hasLoad = true;
+            list.push({
+              config: config,
+              resolve: resolve
+            });
+            if (config.version) {
+              loadFeedBack(config.version);
+            } else {
+              jsonp('//fb.alimama.com/openapi/version.json', {}, function (
+                error,
+                data
+              ) {
+                if (error) {
+                  return;
+                }
+                loadFeedBack(data.version);
+              });
+            }
+          }
+        }
+      });
+    }
+    config = config || {};
+    if (win.FeedBack) {
+      return new win.FeedBack(config);
+    } else {
+      if (hasLoad) {
+        list.push({
+          config: config
+        });
+      } else {
+        hasLoad = true;
+        list.push({
+          config: config
+        });
+        if (config.version) {
+          loadFeedBack(config.version);
+        } else {
+          jsonp('//fb.alimama.com/openapi/version.json', {}, function (
+            error,
+            data
+          ) {
+            if (error) {
+              return;
+            }
+            loadFeedBack(data.version);
+          });
+        }
+      }
+    }
+  };
+})(window);
